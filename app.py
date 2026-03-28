@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Mar 27 16:28:55 2026
+Created on Sat Mar 28 11:24:04 2026
 
 @author: quinneibas
+
 """
 from flask import Flask, render_template, request
 
@@ -62,23 +63,49 @@ def parse_and_roll(roll):
         total += list1[-1]
     return total, list4, list5
 
-
-@app.route('/',methods=['GET', 'POST'])
-def index():
+def reroll_ones(total, list4, list5):
+    for i in range(len(list4)):
+        if list4[i]==1:
+            total-=1
+            x=r.randint(1,list5[i])
+            total+=x
+            list4[i]=x
+    return total, list4, list5
+            
+       
+@app.route('/', methods=['GET', 'POST'])
+def index1():
     result = None
-    rolls_list=[]
-    dice_list=[]
+    rolls_list = []
+    dice_list = []
     roll_query = ''
+
     if request.method == 'POST':
+        action = request.form.get('action')
         roll_query = request.form.get('roll')
-        if roll_query:
+
+        if action == 'roll' and roll_query:
             try:
                 result, rolls_list, dice_list = parse_and_roll(roll_query)
             except:
-                result = 'Invalid Format! Try the format "xdy+zdw+...+a"'
-    return render_template('index.html', result=result, rolls_list=rolls_list, dice_list=dice_list, roll_query=roll_query)
-    
+                result = 'Invalid Format!'
+        
+        elif action == 'reroll':
+            # 1. Get the data currently on the screen
+            # Flask reads these from the hidden inputs we'll add to the HTML
+            current_total = int(request.form.get('current_total', 0))
+            # Convert strings back into lists of integers
+            current_rolls = [int(x) for x in request.form.getlist('current_rolls')]
+            current_dice = [int(x) for x in request.form.getlist('current_dice')]
+            
+            # 2. Run your new function
+            result, rolls_list, dice_list = reroll_ones(current_total, current_rolls, current_dice)
 
+    return render_template('index1.html', 
+                           result=result, 
+                           rolls_list=rolls_list, 
+                           dice_list=dice_list, 
+                           roll_query=roll_query)
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
-    #app.run(host='0.0.0.0', debug=True, port=5001, use_reloader=False)
+    #app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5001)))
+    app.run(host='0.0.0.0', debug=True, port=5001, use_reloader=False)
