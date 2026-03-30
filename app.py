@@ -9,16 +9,12 @@ Created on Sat Mar 28 11:24:04 2026
 from flask import Flask, render_template, request
 
 import random as r
-
 app = Flask(__name__)
-
-def parse_and_roll(roll):
-    roll=roll.replace(' ','')
-    list1 = roll.split('d')
+def parse(dice):
+    dice=dice.replace(' ','')
+    list1 = dice.split('d')
     list3 = []
-    list4= []
     list5=[]
-    total=0
     while True:
         list3=list1.copy()
         for i in range(len(list1)):
@@ -47,21 +43,34 @@ def parse_and_roll(roll):
         if list3==list1:
             break
     for i in range(0,len(list1)-1,2):
+        for j in range(list1[i]):
+            list5.append(list1[i+1])
+    return list1, list5
+
+def rolling(c, list5):
+    sets=[None]*(len(list5))
+    for i in range(len(list5)):
+        sets[i]=c%list5[i]
+    return sets
+
+
+def roll(list1, list5):
+    list4= []
+    total=0
+    for i in range(0,len(list1)-1,2):
         if list1[i] > 0:
             for k in range(list1[i]):
                 x=r.randint(1,list1[i+1])
-                list5.append(list1[i+1])
                 total+=x
                 list4.append(x)
         else:
             for k in range(0,list1[i],-1):
                 x=(-1) * r.randint(1,list1[i+1])
-                list5.append(list1[i+1])
                 total+=x
                 list4.append(x)
     if len(list1)%2 != 0:
         total += list1[-1]
-    return total, list4, list5
+    return total, list4
 
 def reroll_ones(total, list4, list5):
     for i in range(len(list4)):
@@ -71,14 +80,15 @@ def reroll_ones(total, list4, list5):
             total+=x
             list4[i]=x
     return total, list4, list5
-            
-       
+
+
 @app.route('/', methods=['GET', 'POST'])
 def index1():
     result = None
     rolls_list = []
     dice_list = []
     roll_query = ''
+    info_list = []
 
     if request.method == 'POST':
         action = request.form.get('action')
@@ -86,7 +96,8 @@ def index1():
 
         if action == 'roll' and roll_query:
             try:
-                result, rolls_list, dice_list = parse_and_roll(roll_query)
+                info_list, dice_list = parse(roll_query)
+                result, rolls_list = roll(info_list, dice_list)
             except:
                 result = 'Invalid Format!'
         
